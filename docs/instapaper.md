@@ -64,10 +64,11 @@ again.
 
 ## Limits
 
-- Up to 15 images per article, resized to fit a 480 × 720 area. Images that
-  fail to download are dropped from the article. The sync log shows how many
-  of each article's images came directly and how many through the reader. To
-  sync faster, untick **Include images**.
+- Up to 30 images per article by default, resized to fit a 480 × 720 area.
+  Change this with **Max images per article** (0–100); 0 skips images for the
+  fastest sync. Images that fail to download are dropped from the article. The
+  sync log shows how many of each article's images came directly and how many
+  through the reader.
 - The reader handles one web request at a time, so each article takes a few
   seconds. Keep the page open until the sync log says it's done.
 - Instapaper articles are never moved by **Move Finished Books to Read Folder**,

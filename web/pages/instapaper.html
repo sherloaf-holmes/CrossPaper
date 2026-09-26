@@ -47,7 +47,6 @@
       <div class="stack">
         <label class="check"><input type="checkbox" id="optArchive" checked /> Archive articles marked finished on the device in Instapaper, then remove them from the device</label>
         <label class="check"><input type="checkbox" id="optProgress" checked /> Send reading progress for unfinished articles</label>
-        <label class="check"><input type="checkbox" id="optImages" checked /> Include images (up to 15 per article). Images from sites that block direct downloads go through the device, which is slower</label>
         <div class="row">
           <label>Folder
             <select id="optFolder">
@@ -58,7 +57,11 @@
           <label>Keep up to
             <input type="number" id="optMax" min="1" max="50" value="20" /> articles on the device
           </label>
+          <label>Max images per article
+            <input type="number" id="optMaxImages" min="0" max="100" value="30" />
+          </label>
         </div>
+        <p class="meta">Set images to 0 for the fastest sync. Images from sites that block direct downloads go through the device, which is slower.</p>
         <div class="row">
           <button type="button" id="syncBtn" class="btn btn-primary">Sync now</button>
         </div>

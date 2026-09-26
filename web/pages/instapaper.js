@@ -6,7 +6,11 @@
 
 const API = "/api/instapaper";
 const ARTICLE_FOLDER = "/Instapaper";
-const MAX_IMAGES_PER_ARTICLE = 15;
+// Images are probed (~1 KB) at layout and decoded one at a time as their page
+// renders, so device memory does not grow with the count; the cap only bounds
+// EPUB size and sync time.
+const DEFAULT_MAX_IMAGES = 30;
+const MAX_IMAGES_LIMIT = 100;
 const IMAGE_FETCH_CONCURRENCY = 4;
 const DIRECT_IMAGE_TIMEOUT_MS = 10000;
 const IMAGE_MAX_WIDTH = 480;
@@ -182,7 +186,7 @@ function loadOptions() {
     const saved = JSON.parse(localStorage.getItem(OPTIONS_KEY) || "{}");
     if (typeof saved.archive === "boolean") $("optArchive").checked = saved.archive;
     if (typeof saved.progress === "boolean") $("optProgress").checked = saved.progress;
-    if (typeof saved.images === "boolean") $("optImages").checked = saved.images;
+    if (typeof saved.maxImages === "number") $("optMaxImages").value = saved.maxImages;
     if (saved.max) $("optMax").value = saved.max;
     if (saved.folder) $("optFolder").dataset.saved = saved.folder;
   } catch (e) {
@@ -192,10 +196,15 @@ function loadOptions() {
 
 function readOptions() {
   const max = Math.max(1, Math.min(state.maxArticles || 50, parseInt($("optMax").value, 10) || 20));
+  // 0 is a valid choice (no images), so it cannot use the `|| default` pattern.
+  const imagesInput = parseInt($("optMaxImages").value, 10);
+  const maxImages = Number.isNaN(imagesInput)
+    ? DEFAULT_MAX_IMAGES
+    : Math.max(0, Math.min(MAX_IMAGES_LIMIT, imagesInput));
   const options = {
     archive: $("optArchive").checked,
     progress: $("optProgress").checked,
-    images: $("optImages").checked,
+    maxImages,
     max,
     folder: $("optFolder").value || "unread",
   };
@@ -357,11 +366,11 @@ async function toDeviceJpeg(blob) {
   }
 }
 
-async function embedImages(doc, zip, baseUrl, log, includeImages) {
+async function embedImages(doc, zip, baseUrl, log, maxImages) {
   const candidates = [];
   for (const img of [...doc.querySelectorAll("img")]) {
-    const src = includeImages ? pickImageSource(img, baseUrl) : "";
-    if (!src || candidates.length >= MAX_IMAGES_PER_ARTICLE) {
+    const src = candidates.length < maxImages ? pickImageSource(img, baseUrl) : "";
+    if (!src) {
       img.remove();
       continue;
     }
@@ -522,7 +531,7 @@ const ARTICLE_CSS = `img { max-width: 100%; height: auto; }
 figcaption { font-size: 0.85em; }
 pre { white-space: pre-wrap; }`;
 
-async function buildEpub(article, log, includeImages = true) {
+async function buildEpub(article, log, maxImages = DEFAULT_MAX_IMAGES) {
   const doc = new DOMParser().parseFromString(article.html, "text/html");
   const lang = (doc.documentElement.getAttribute("lang") || "en").split(/[-_]/)[0].toLowerCase() || "en";
 
@@ -531,7 +540,7 @@ async function buildEpub(article, log, includeImages = true) {
   zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
   zip.file("META-INF/container.xml", CONTAINER_XML);
 
-  const images = await embedImages(doc, zip, article.url, log, includeImages);
+  const images = await embedImages(doc, zip, article.url, log, maxImages);
   cleanDocument(doc, article.title);
 
   zip.file("OEBPS/article.xhtml", buildChapter(article, doc.body, lang));
@@ -637,7 +646,7 @@ async function downloadArticle(bookmark, log, options) {
   };
   log('Downloading "' + article.title + '"...');
   article.html = await instapaper("bookmarks/get_text", { bookmark_id: article.id });
-  const { blob, imageCount } = await buildEpub(article, log, options.images);
+  const { blob, imageCount } = await buildEpub(article, log, options.maxImages);
   const filename = await uploadEpub(blob, articleFilename(article));
   await postJson(API + "/articles", {
     id: article.id,
