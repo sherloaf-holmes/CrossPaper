@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- Instapaper sync from the web portal: sign in with your own Instapaper API key, then Sync downloads unread articles as EPUBs, archives the ones you marked finished, and sends your reading progress back to Instapaper. The browser does the conversion and the device relays the Instapaper requests. Synced articles have their own Articles screen on the Home menu, showing each article's site, saved date and progress.
+
 ## [v1.6.0] - 2026-09-21
 
 ### Added

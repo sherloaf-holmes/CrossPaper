@@ -111,6 +111,9 @@ class CrossPointWebServer {
   void handleGetSettings() const;
   void handlePostSettings();
 
+  // Instapaper page (API handlers live in InstapaperWebApi)
+  void handleInstapaperPage() const;
+
   // Font management handlers
   void handleFontsPage() const;
   void handleFontList() const;

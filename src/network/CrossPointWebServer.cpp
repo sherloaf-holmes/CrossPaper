@@ -23,6 +23,7 @@
 #include "AppVersion.h"
 #include "CrossPointSettings.h"
 #include "FontInstaller.h"
+#include "InstapaperWebApi.h"
 #include "OpdsServerStore.h"
 #include "QuickActions.h"
 #include "SdCardFontSystem.h"
@@ -33,6 +34,7 @@
 #include "html/FilesPageHtml.generated.h"
 #include "html/FontsPageHtml.generated.h"
 #include "html/HomePageHtml.generated.h"
+#include "html/InstapaperPageHtml.generated.h"
 #include "html/LogoPng.generated.h"
 #include "html/SettingsPageHtml.generated.h"
 #include "html/StyleCss.generated.h"
@@ -394,6 +396,10 @@ void CrossPointWebServer::begin() {
   server->on("/api/wifi", HTTP_POST, [this] { handlePostWifiNetwork(); });
   server->on("/api/wifi/delete", HTTP_POST, [this] { handleDeleteWifiNetwork(); });
 
+  // Instapaper sync page and API
+  server->on("/instapaper", HTTP_GET, [this] { handleInstapaperPage(); });
+  InstapaperWebApi::registerRoutes(*server, apMode);
+
   server->onNotFound([this] { handleNotFound(); });
 
   // Collect WebDAV headers and register handler
@@ -476,6 +482,7 @@ void CrossPointWebServer::stop() {
   delay(10);
 
   server.reset();
+  InstapaperWebApi::release();
 
   // Note: Static upload variables (uploadFileName, uploadPath, uploadError) are declared
   // later in the file and will be cleared when they go out of scope or on next upload
@@ -1394,6 +1401,10 @@ void CrossPointWebServer::handleDelete() const {
 
 void CrossPointWebServer::handleSettingsPage() const {
   sendStaticContent(server.get(), SettingsPageHtml, sizeof(SettingsPageHtml), SettingsPageHtmlETag);
+}
+
+void CrossPointWebServer::handleInstapaperPage() const {
+  sendStaticContent(server.get(), InstapaperPageHtml, sizeof(InstapaperPageHtml), InstapaperPageHtmlETag);
 }
 
 void CrossPointWebServer::handleGetSettings() const {

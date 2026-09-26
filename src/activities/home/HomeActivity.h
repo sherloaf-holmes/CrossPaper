@@ -45,6 +45,7 @@ class HomeActivity final : public Activity {
   bool hasReadingStats = false;
   bool hasBookmarks = false;
   bool hasClippings = false;
+  bool hasArticles = false;
   bool hasOpdsServers = false;
   bool minimalMenuOpen = false;
   bool minimalSuppressInitialFrontRelease = false;
@@ -95,6 +96,7 @@ class HomeActivity final : public Activity {
   void onFileBrowserOpen();
   void onContinueReading();
   void onRecentsOpen();
+  void onArticlesOpen();
   void onSettingsOpen();
   void onFileTransferOpen();
   void onOpdsBrowserOpen();
