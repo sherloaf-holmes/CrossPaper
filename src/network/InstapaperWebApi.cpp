@@ -19,7 +19,6 @@
 #include "InstapaperArticleStore.h"
 #include "RecentBooksStore.h"
 #include "activities/home/BookActions.h"
-#include "activities/home/RecentBookProgress.h"
 
 namespace {
 
@@ -112,11 +111,10 @@ void handleStatus(WebServer& server, bool apMode) {
     doc["savedAt"] = article.savedAt;
     doc["path"] = article.path;
     const bool exists = Storage.exists(article.path.c_str());
+    const InstapaperReadingState reading = exists ? loadInstapaperReadingState(article.path) : InstapaperReadingState{};
     doc["missing"] = !exists;
-    doc["finished"] = exists && BookActions::isBookCompleted(article.path);
-    RecentBook book;
-    book.path = article.path;
-    doc["percent"] = exists ? RecentBookProgress::loadCachedEpubPercent(book) : -1.0f;
+    doc["finished"] = reading.finished;
+    doc["percent"] = reading.percent;
 
     written = serializeJson(doc, output, sizeof(output));
     if (written >= sizeof(output)) {

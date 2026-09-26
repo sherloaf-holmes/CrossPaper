@@ -7,6 +7,8 @@
 const API = "/api/instapaper";
 const ARTICLE_FOLDER = "/Instapaper";
 const MAX_IMAGES_PER_ARTICLE = 15;
+const IMAGE_FETCH_CONCURRENCY = 4;
+const DIRECT_IMAGE_TIMEOUT_MS = 10000;
 const IMAGE_MAX_WIDTH = 480;
 const IMAGE_MAX_HEIGHT = 720;
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -180,6 +182,7 @@ function loadOptions() {
     const saved = JSON.parse(localStorage.getItem(OPTIONS_KEY) || "{}");
     if (typeof saved.archive === "boolean") $("optArchive").checked = saved.archive;
     if (typeof saved.progress === "boolean") $("optProgress").checked = saved.progress;
+    if (typeof saved.images === "boolean") $("optImages").checked = saved.images;
     if (saved.max) $("optMax").value = saved.max;
     if (saved.folder) $("optFolder").dataset.saved = saved.folder;
   } catch (e) {
@@ -192,6 +195,7 @@ function readOptions() {
   const options = {
     archive: $("optArchive").checked,
     progress: $("optProgress").checked,
+    images: $("optImages").checked,
     max,
     folder: $("optFolder").value || "unread",
   };
@@ -248,11 +252,79 @@ function pickImageSource(img, baseUrl) {
   }
 }
 
-async function fetchImageBlob(url) {
+// host -> Promise<boolean>: whether the first direct (CORS) fetch from that
+// host got through. Later images from the same host wait for that answer, so a
+// host that refuses CORS is only tried directly once per page session.
+const directHostProbes = new Map();
+// The device serves one request at a time, so relayed images queue up here
+// while direct fetches keep running in parallel.
+let relayQueue = Promise.resolve();
+
+function relayImage(url) {
+  const run = relayQueue.then(async () => {
+    const res = await fetch(API + "/image?url=" + encodeURIComponent(url));
+    if (!res.ok) throw new Error(await readError(res));
+    return res.blob();
+  });
+  relayQueue = run.catch(() => {});
+  return run;
+}
+
+// Many image CDNs send CORS headers, so the browser can fetch those images
+// itself without the slow trip through the device.
+async function fetchImageDirect(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DIRECT_IMAGE_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      mode: "cors",
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      // The host answered (CORS allowed it); relaying would get the same error.
+      const err = new Error("HTTP " + res.status);
+      err.final = true;
+      throw err;
+    }
+    return await res.blob();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchImageBlob(url, counts) {
   if (url.startsWith("data:")) return (await fetch(url)).blob();
-  const res = await fetch(API + "/image?url=" + encodeURIComponent(url));
-  if (!res.ok) throw new Error(await readError(res));
-  return res.blob();
+  const host = hostOf(url);
+  const probe = directHostProbes.get(host);
+  let tryDirect = true;
+  let attempt = null;
+  if (probe) {
+    tryDirect = await probe;
+  } else {
+    attempt = fetchImageDirect(url);
+    // An HTTP error still proves CORS works for this host.
+    directHostProbes.set(
+      host,
+      attempt.then(
+        () => true,
+        (e) => e.final === true
+      )
+    );
+  }
+  if (tryDirect) {
+    try {
+      const blob = await (attempt || fetchImageDirect(url));
+      counts.direct++;
+      return blob;
+    } catch (e) {
+      if (e.final) throw e;
+    }
+  }
+  const blob = await relayImage(url);
+  counts.relayed++;
+  return blob;
 }
 
 // Resizes to the screen and converts to grayscale baseline JPEG, which the
@@ -285,32 +357,52 @@ async function toDeviceJpeg(blob) {
   }
 }
 
-async function embedImages(doc, zip, baseUrl, log) {
-  const images = [];
+async function embedImages(doc, zip, baseUrl, log, includeImages) {
+  const candidates = [];
   for (const img of [...doc.querySelectorAll("img")]) {
-    const src = pickImageSource(img, baseUrl);
-    if (!src || images.length >= MAX_IMAGES_PER_ARTICLE) {
+    const src = includeImages ? pickImageSource(img, baseUrl) : "";
+    if (!src || candidates.length >= MAX_IMAGES_PER_ARTICLE) {
       img.remove();
       continue;
     }
-    try {
-      const jpeg = await toDeviceJpeg(await fetchImageBlob(src));
-      if (!jpeg) {
-        img.remove();
-        continue;
-      }
-      const href = "images/img" + (images.length + 1) + ".jpg";
-      zip.file("OEBPS/" + href, jpeg);
-      images.push({ id: "img" + (images.length + 1), href });
-      const alt = img.getAttribute("alt") || "";
-      for (const attr of [...img.attributes]) img.removeAttribute(attr.name);
-      img.setAttribute("src", href);
-      img.setAttribute("alt", alt);
-    } catch (e) {
-      log("  Skipped an image: " + e.message);
-      img.remove();
-    }
+    candidates.push({ img, src });
   }
+  if (candidates.length === 0) return [];
+
+  // A few workers at once: direct fetches overlap, relayed ones still queue.
+  const counts = { direct: 0, relayed: 0, failed: 0 };
+  const jpegs = new Array(candidates.length).fill(null);
+  let next = 0;
+  const worker = async () => {
+    while (next < candidates.length) {
+      const i = next++;
+      try {
+        jpegs[i] = await toDeviceJpeg(await fetchImageBlob(candidates[i].src, counts));
+      } catch (e) {
+        counts.failed++;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(IMAGE_FETCH_CONCURRENCY, candidates.length) }, worker));
+
+  const images = [];
+  candidates.forEach(({ img }, i) => {
+    if (!jpegs[i]) {
+      img.remove();
+      return;
+    }
+    const href = "images/img" + (images.length + 1) + ".jpg";
+    zip.file("OEBPS/" + href, jpegs[i]);
+    images.push({ id: "img" + (images.length + 1), href });
+    const alt = img.getAttribute("alt") || "";
+    for (const attr of [...img.attributes]) img.removeAttribute(attr.name);
+    img.setAttribute("src", href);
+    img.setAttribute("alt", alt);
+  });
+  log(
+    "  Images: " + counts.direct + " direct, " + counts.relayed + " via device" +
+      (counts.failed ? ", " + counts.failed + " failed" : "")
+  );
   return images;
 }
 
@@ -430,7 +522,7 @@ const ARTICLE_CSS = `img { max-width: 100%; height: auto; }
 figcaption { font-size: 0.85em; }
 pre { white-space: pre-wrap; }`;
 
-async function buildEpub(article, log) {
+async function buildEpub(article, log, includeImages = true) {
   const doc = new DOMParser().parseFromString(article.html, "text/html");
   const lang = (doc.documentElement.getAttribute("lang") || "en").split(/[-_]/)[0].toLowerCase() || "en";
 
@@ -439,7 +531,7 @@ async function buildEpub(article, log) {
   zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
   zip.file("META-INF/container.xml", CONTAINER_XML);
 
-  const images = await embedImages(doc, zip, article.url, log);
+  const images = await embedImages(doc, zip, article.url, log, includeImages);
   cleanDocument(doc, article.title);
 
   zip.file("OEBPS/article.xhtml", buildChapter(article, doc.body, lang));
@@ -535,7 +627,7 @@ async function syncFinishedArticles(options, log) {
   }
 }
 
-async function downloadArticle(bookmark, log) {
+async function downloadArticle(bookmark, log, options) {
   const article = {
     id: bookmark.bookmark_id,
     title: (bookmark.title || "").trim() || hostOf(bookmark.url) || "Untitled",
@@ -545,7 +637,7 @@ async function downloadArticle(bookmark, log) {
   };
   log('Downloading "' + article.title + '"...');
   article.html = await instapaper("bookmarks/get_text", { bookmark_id: article.id });
-  const { blob, imageCount } = await buildEpub(article, log);
+  const { blob, imageCount } = await buildEpub(article, log, options.images);
   const filename = await uploadEpub(blob, articleFilename(article));
   await postJson(API + "/articles", {
     id: article.id,
@@ -592,7 +684,7 @@ async function sync() {
     let failures = 0;
     for (const bookmark of fresh) {
       try {
-        await downloadArticle(bookmark, log);
+        await downloadArticle(bookmark, log, options);
       } catch (e) {
         failures++;
         log('  Failed "' + (bookmark.title || bookmark.bookmark_id) + '": ' + e.message, "err");

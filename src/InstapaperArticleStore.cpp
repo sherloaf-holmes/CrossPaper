@@ -1,9 +1,14 @@
 #include "InstapaperArticleStore.h"
 
+#include <Epub.h>
 #include <HalStorage.h>
 #include <Logging.h>
 
 #include <algorithm>
+
+#include "RecentBooksStore.h"
+#include "activities/home/BookActions.h"
+#include "activities/home/RecentBookProgress.h"
 
 void InstapaperArticleStore::toJson(JsonDocument& doc) const {
   JsonArray arr = doc["articles"].to<JsonArray>();
@@ -93,4 +98,16 @@ bool InstapaperArticleStore::hasAnyArticles() { return Storage.exists(getFilePat
 bool isInstapaperArticlePath(const std::string& path) {
   constexpr size_t prefixLen = sizeof(INSTAPAPER_FOLDER) - 1;
   return path.size() > prefixLen && path.compare(0, prefixLen, INSTAPAPER_FOLDER) == 0 && path[prefixLen] == '/';
+}
+
+InstapaperReadingState loadInstapaperReadingState(const std::string& path) {
+  InstapaperReadingState state;
+  // The reader creates the cache folder on first open; before that there is
+  // nothing to read, and each missing-file read would log an open failure.
+  if (!Storage.exists(Epub::cachePathForFilePath(path, "/.crosspoint").c_str())) return state;
+  state.finished = BookActions::isBookCompleted(path);
+  RecentBook book;
+  book.path = path;
+  state.percent = RecentBookProgress::loadCachedEpubPercent(book);
+  return state;
 }

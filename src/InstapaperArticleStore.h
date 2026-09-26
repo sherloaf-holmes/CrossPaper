@@ -71,4 +71,13 @@ constexpr char INSTAPAPER_FOLDER[] = "/Instapaper";
 // "move finished to Read folder": their path is the link to the index entry.
 bool isInstapaperArticlePath(const std::string& path);
 
+// Reading state from the article's own book cache (reading stats + cached
+// progress). A never-opened article has no cache folder yet, so it is reported
+// unread without trying to open the missing stats/progress files.
+struct InstapaperReadingState {
+  bool finished = false;
+  float percent = -1.0f;  // 0-100; negative when unknown
+};
+InstapaperReadingState loadInstapaperReadingState(const std::string& path);
+
 #define INSTAPAPER_ARTICLES InstapaperArticleStore::getInstance()

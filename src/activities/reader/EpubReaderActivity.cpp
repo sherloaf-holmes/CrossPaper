@@ -1909,17 +1909,25 @@ bool EpubReaderActivity::isAtOrPastCompletionTrigger() const {
 }
 
 bool EpubReaderActivity::shouldQueueCompletionPromptOnChapterExit() const {
-  if (completionPromptShown || completionPromptQueued || stats.isCompleted || footnoteDepth > 0 ||
-      !completionTriggerCrossed || !epub || !section || section->pageCount == 0 || completionTriggerSpineIndex < 0 ||
-      section->isBuilding() || section->isPartial()) {
+  if (completionPromptShown || completionPromptQueued || stats.isCompleted || footnoteDepth > 0 || !epub || !section ||
+      section->pageCount == 0 || section->isBuilding() || section->isPartial()) {
     return false;
   }
 
-  if (currentSpineIndex != completionTriggerSpineIndex) {
+  if (section->currentPage < section->pageCount - 1) {
     return false;
   }
 
-  return section->currentPage >= section->pageCount - 1;
+  // Leaving the final chapter always offers the prompt. The 99% trigger is
+  // measured at the start of each page, so a short final chapter (e.g. a
+  // single-chapter article: its last page starts at (n-1)/n) can reach the
+  // End-of-Book screen without ever crossing it.
+  if (currentSpineIndex == epub->getSpineItemsCount() - 1) {
+    return true;
+  }
+
+  return completionTriggerCrossed && completionTriggerSpineIndex >= 0 &&
+         currentSpineIndex == completionTriggerSpineIndex;
 }
 
 void EpubReaderActivity::queueCompletionPromptIfNeeded() {

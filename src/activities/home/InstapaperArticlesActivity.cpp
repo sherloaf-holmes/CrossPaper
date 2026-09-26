@@ -59,14 +59,9 @@ void InstapaperArticlesActivity::loadRows() {
     const std::string date = formatSavedDate(article.savedAt);
     row.subtitle = article.site;
     if (!date.empty()) row.subtitle += row.subtitle.empty() ? date : ", " + date;
-    row.finished = BookActions::isBookCompleted(article.path);
-    if (row.finished) {
-      row.value = tr(STR_INSTAPAPER_FINISHED);
-    } else {
-      RecentBook book;
-      book.path = article.path;
-      row.value = RecentBookProgress::formatPercent(RecentBookProgress::loadCachedEpubPercent(book));
-    }
+    const InstapaperReadingState reading = loadInstapaperReadingState(article.path);
+    row.finished = reading.finished;
+    row.value = row.finished ? tr(STR_INSTAPAPER_FINISHED) : RecentBookProgress::formatPercent(reading.percent);
     rows.push_back(std::move(row));
   }
   // Unfinished first, newest first within each group.
