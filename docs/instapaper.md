@@ -1,6 +1,11 @@
+---
+title: Instapaper Sync
+nav_order: 16
+---
+
 # Instapaper Sync
 
-CrossInk can download your unread Instapaper articles as EPUBs and archive
+CrossPaper can download your unread Instapaper articles as EPUBs and archive
 them in Instapaper once you finish them on the device. Syncing happens from
 the web portal, so you type your login on a laptop or phone rather than on the
 reader.
