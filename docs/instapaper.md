@@ -15,13 +15,15 @@ reader.
 - Your browser does the heavy work: it cleans up each article, resizes images
   to grayscale, and packages an EPUB. The reader only stores files.
 - Instapaper doesn't let web pages on other sites call its API, so the reader
-  signs each request and passes it on to Instapaper. Article images go through
-  the reader the same way.
+  signs each request and passes it on to Instapaper.
+- The browser downloads article images itself when the image's site allows it,
+  several at a time. Images from sites that block this go through the reader,
+  one at a time, which is slower.
 - Articles are saved in `/Instapaper/` and listed on the Home screen under
   **Articles**, with the site, the date you saved them and your progress.
 - An article counts as finished when you mark it finished: accept the
-  "Mark as Finished?" prompt at 99%, or use **Mark as Finished** from the
-  article's long-press menu.
+  "Mark as Finished?" prompt when you page past the last page, or use
+  **Mark as Finished** from the article's long-press menu.
 
 Nothing syncs in the background. Instapaper is only contacted while you have
 the sync page open.
@@ -63,7 +65,9 @@ again.
 ## Limits
 
 - Up to 15 images per article, resized to fit a 480 × 720 area. Images that
-  fail to download are dropped from the article.
+  fail to download are dropped from the article. The sync log shows how many
+  of each article's images came directly and how many through the reader. To
+  sync faster, untick **Include images**.
 - The reader handles one web request at a time, so each article takes a few
   seconds. Keep the page open until the sync log says it's done.
 - Instapaper articles are never moved by **Move Finished Books to Read Folder**,
