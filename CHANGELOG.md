@@ -1,4 +1,8 @@
-## [Unreleased]
+## [v1.6.0-1] - 2026-09-26
+
+First working version of CrossPaper, adding Instapaper sync to CrossInk.
+
+Currently tested & Working on x4 Classic & Simulator, untested on x4/x3/x4 Pro hardware
 
 ### Added
 
