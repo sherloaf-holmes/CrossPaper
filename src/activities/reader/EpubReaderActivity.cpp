@@ -45,6 +45,7 @@
 #include "EpubReaderUtils.h"
 #include "FocusReadingText.h"
 #include "GlobalActions.h"
+#include "InstapaperArticleStore.h"
 #include "KOReaderCredentialStore.h"
 #include "KOReaderSyncActivity.h"
 #include "LookedUpWordsActivity.h"
@@ -1365,6 +1366,10 @@ bool isInReadFolder(const std::string& path) {
   return path.size() > n && path.compare(0, n, READ_FOLDER) == 0 && path[n] == '/';
 }
 
+// Instapaper articles stay in their folder: their path links them to the
+// article index the web portal syncs against.
+bool canMoveToReadFolder(const std::string& path) { return !isInReadFolder(path) && !isInstapaperArticlePath(path); }
+
 // Relocate a finished book into /Read/, then migrate path-keyed state such as
 // cache files, bookmarks, recents, and resume path.
 void moveFinishedBookToReadFolder(const std::string& srcPath, const std::string& dstPath,
@@ -1815,7 +1820,7 @@ void EpubReaderActivity::applyBookStatsEditsFromDisk() {
 void EpubReaderActivity::handleBookStatsReturn(const bool returnToReaderMenu) {
   applyBookStatsEditsFromDisk();
   completionPromptShown = stats.isCompleted;
-  if (stats.isCompleted && SETTINGS.moveFinishedToReadFolder && epub && !isInReadFolder(epub->getPath())) {
+  if (stats.isCompleted && SETTINGS.moveFinishedToReadFolder && epub && canMoveToReadFolder(epub->getPath())) {
     pendingReadFolderMove = true;
   } else if (!stats.isCompleted) {
     pendingReadFolderMove = false;
@@ -1904,17 +1909,25 @@ bool EpubReaderActivity::isAtOrPastCompletionTrigger() const {
 }
 
 bool EpubReaderActivity::shouldQueueCompletionPromptOnChapterExit() const {
-  if (completionPromptShown || completionPromptQueued || stats.isCompleted || footnoteDepth > 0 ||
-      !completionTriggerCrossed || !epub || !section || section->pageCount == 0 || completionTriggerSpineIndex < 0 ||
-      section->isBuilding() || section->isPartial()) {
+  if (completionPromptShown || completionPromptQueued || stats.isCompleted || footnoteDepth > 0 || !epub || !section ||
+      section->pageCount == 0 || section->isBuilding() || section->isPartial()) {
     return false;
   }
 
-  if (currentSpineIndex != completionTriggerSpineIndex) {
+  if (section->currentPage < section->pageCount - 1) {
     return false;
   }
 
-  return section->currentPage >= section->pageCount - 1;
+  // Leaving the final chapter always offers the prompt. The 99% trigger is
+  // measured at the start of each page, so a short final chapter (e.g. a
+  // single-chapter article: its last page starts at (n-1)/n) can reach the
+  // End-of-Book screen without ever crossing it.
+  if (currentSpineIndex == epub->getSpineItemsCount() - 1) {
+    return true;
+  }
+
+  return completionTriggerCrossed && completionTriggerSpineIndex >= 0 &&
+         currentSpineIndex == completionTriggerSpineIndex;
 }
 
 void EpubReaderActivity::queueCompletionPromptIfNeeded() {
@@ -2845,7 +2858,7 @@ void EpubReaderActivity::loop() {
   // setBookCompleted() also arms this when the user marks a book finished before
   // the End-of-Book screen.
   if (atEndOfBook) {
-    pendingReadFolderMove = SETTINGS.moveFinishedToReadFolder && !isInReadFolder(epub->getPath());
+    pendingReadFolderMove = SETTINGS.moveFinishedToReadFolder && canMoveToReadFolder(epub->getPath());
   } else if (!stats.isCompleted) {
     pendingReadFolderMove = false;
   }
@@ -5189,7 +5202,7 @@ void EpubReaderActivity::setBookCompleted(bool isCompleted) {
     if (SETTINGS.removeReadBooksFromRecents) {
       RECENT_BOOKS.removeByPath(epub->getPath());
     }
-    if (SETTINGS.moveFinishedToReadFolder && !isInReadFolder(epub->getPath())) {
+    if (SETTINGS.moveFinishedToReadFolder && canMoveToReadFolder(epub->getPath())) {
       pendingReadFolderMove = true;
     }
   } else {

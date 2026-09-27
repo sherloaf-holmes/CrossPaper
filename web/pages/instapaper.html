@@ -1,0 +1,75 @@
+<div class="card">
+      <h2>Instapaper Account</h2>
+      <p id="accountStatus" class="meta">Loading...</p>
+
+      <div id="apWarning" class="notice" hidden>
+        The device is in hotspot mode, so this browser has no internet access. On the device, choose
+        <strong>File Transfer &rarr; Join a Network</strong> to sync with Instapaper.
+      </div>
+
+      <form id="keyForm" class="stack" hidden>
+        <details id="keyHelp">
+          <summary>How do I get an API key?</summary>
+          <ol>
+            <li>Sign in at <a href="https://www.instapaper.com/developers" target="_blank" rel="noopener">instapaper.com/developers</a> and create an application.</li>
+            <li>Leave it in <em>Owner Only</em> mode. You don't need to submit it for review.</li>
+            <li>Copy the consumer key and secret below. The secret is shown only once, when you create the application.</li>
+          </ol>
+          <p class="meta">You need your own key because Instapaper revokes keys that are shared publicly, and only the key's owner can download article text without a paid plan.</p>
+        </details>
+        <label>Consumer key <input type="text" id="consumerKey" autocomplete="off" required /></label>
+        <label>Consumer secret <input type="password" id="consumerSecret" autocomplete="off" placeholder="Leave blank to keep the saved secret" /></label>
+        <div class="row">
+          <button type="submit" class="btn btn-primary">Save API key</button>
+          <button type="button" id="cancelKey" class="btn btn-secondary" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <form id="loginForm" class="stack" hidden>
+        <label>Email or username <input type="text" id="username" autocomplete="username" required /></label>
+        <label>Password <input type="password" id="password" autocomplete="current-password" placeholder="Leave blank if your account has no password" /></label>
+        <p class="meta">Your password goes to Instapaper once, to get a sign-in token. It isn't stored on the device.</p>
+        <div class="row">
+          <button type="submit" class="btn btn-primary">Log in</button>
+          <button type="button" class="btn btn-secondary change-key">Change API key</button>
+        </div>
+      </form>
+
+      <div id="loggedIn" class="row" hidden>
+        <button type="button" id="logout" class="btn btn-secondary">Log out</button>
+        <button type="button" class="btn btn-secondary change-key">Change API key</button>
+      </div>
+      <div id="accountMsg"></div>
+    </div>
+
+    <div class="card" id="syncCard" hidden>
+      <h2>Sync</h2>
+      <div class="stack">
+        <label class="check"><input type="checkbox" id="optArchive" checked /> Archive articles marked finished on the device in Instapaper, then remove them from the device</label>
+        <label class="check"><input type="checkbox" id="optProgress" checked /> Send reading progress for unfinished articles</label>
+        <div class="row">
+          <label>Folder
+            <select id="optFolder">
+              <option value="unread">Unread</option>
+              <option value="starred">Starred</option>
+            </select>
+          </label>
+          <label>Keep up to
+            <input type="number" id="optMax" min="1" max="50" value="20" /> articles on the device
+          </label>
+          <label>Max images per article
+            <input type="number" id="optMaxImages" min="0" max="100" value="30" />
+          </label>
+        </div>
+        <p class="meta">Set images to 0 for the fastest sync. Images from sites that block direct downloads go through the device, which is slower.</p>
+        <div class="row">
+          <button type="button" id="syncBtn" class="btn btn-primary">Sync now</button>
+        </div>
+      </div>
+      <ol id="log" class="log" hidden></ol>
+    </div>
+
+    <div class="card">
+      <h2>On This Device</h2>
+      <div id="articles"><p class="empty">Loading...</p></div>
+    </div>
