@@ -1,4 +1,4 @@
-## [v1.6.0-1] - 2026-09-26
+## [v1.6.0.1] - 2026-09-26
 
 First working version of CrossPaper, adding Instapaper sync to CrossInk.
 
@@ -7,6 +7,10 @@ Currently tested & Working on x4 Classic & Simulator, untested on x4/x3/x4 Pro h
 ### Added
 
 - Instapaper sync from the web portal: sign in with your own Instapaper API key, then Sync downloads unread articles as EPUBs, archives the ones you marked finished, and sends your reading progress back to Instapaper. The browser does the conversion and the device relays the Instapaper requests. Synced articles have their own Articles screen on the Home menu, showing each article's site, saved date and progress.
+
+### Changed
+
+- Over-the-air updates now come from CrossPaper releases instead of CrossInk, so a CrossPaper device is never updated back to CrossInk. Devices running a build from before this change must be reflashed over USB once.
 
 ### Fixed
 

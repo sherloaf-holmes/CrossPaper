@@ -44,3 +44,7 @@ Refer to https://freeink.org/llms.txt for guidance.
 
 - POSIX TZ signs are inverted from ISO 8601 in `TimeStore::applyTimezone()`: `"UTC-1"` means UTC+1.
 - `LyraTheme::drawHeader()` does not call `BaseTheme::drawHeader()`, so header changes in the base theme must be duplicated in Lyra if needed.
+
+## CrossPaper Fork
+
+- This repo is CrossPaper, a long-lived fork of `uxjulia/CrossInk`. Read `FORK.md` before touching OTA, versioning, workflows, or anything upstream rewrites (`docs/catalog`, `[crossink] version`); keep the diff against upstream minimal.
