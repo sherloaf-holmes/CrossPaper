@@ -218,8 +218,8 @@ void handleCall(WebServer& server, bool apMode) {
   const String body = server.hasArg("plain") ? server.arg("plain") : String();
   RelayContext relay{&server, false};
   const InstapaperClient::ResponseSink sink{&relay, relayBegin, relayWrite};
-  const InstapaperClient::Error err = InstapaperClient::call(
-      method.c_str(), std::string_view(body.c_str(), body.length()), timestampArg(server), sink);
+  const InstapaperClient::Error err =
+      InstapaperClient::call(method.c_str(), std::string_view(body.c_str(), body.length()), timestampArg(server), sink);
   if (relay.started) {
     if (err != InstapaperClient::OK) {
       // Headers are already out; drop the connection so the page sees a failed

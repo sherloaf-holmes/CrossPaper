@@ -227,9 +227,8 @@ std::string signatureBaseString(std::string_view method, std::string_view url, s
     p.key = percentEncode(p.key);
     p.value = percentEncode(p.value);
   }
-  std::sort(params.begin(), params.end(), [](const Param& a, const Param& b) {
-    return a.key == b.key ? a.value < b.value : a.key < b.key;
-  });
+  std::sort(params.begin(), params.end(),
+            [](const Param& a, const Param& b) { return a.key == b.key ? a.value < b.value : a.key < b.key; });
 
   std::string normalized;
   for (const Param& p : params) {

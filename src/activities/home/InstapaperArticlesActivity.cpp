@@ -216,8 +216,8 @@ void InstapaperArticlesActivity::showActionMenu(const size_t index, const bool i
       {FileBrowserAction::ToggleCompleted, row.finished ? StrId::STR_MARK_UNFINISHED : StrId::STR_MARK_FINISHED});
   items.push_back({FileBrowserAction::Delete, StrId::STR_DELETE});
 
-  startActivityForResult(std::make_unique<FileBrowserActionActivity>(renderer, mappedInput, row.title,
-                                                                     std::move(items), ignoreInitialConfirmRelease),
+  startActivityForResult(std::make_unique<FileBrowserActionActivity>(renderer, mappedInput, row.title, std::move(items),
+                                                                     ignoreInitialConfirmRelease),
                          [this, row](const ActivityResult& result) {
                            longPressFired = false;
                            if (result.isCancelled) return;
@@ -232,8 +232,8 @@ void InstapaperArticlesActivity::showActionMenu(const size_t index, const bool i
                            } else if (action == FileBrowserAction::ToggleCompleted) {
                              bool completed = false;
                              if (BookActions::toggleBookCompleted(row.path, row.title, completed)) {
-                               BookActions::drawToast(renderer, completed ? tr(STR_MARKED_FINISHED)
-                                                                          : tr(STR_MARKED_UNFINISHED));
+                               BookActions::drawToast(renderer,
+                                                      completed ? tr(STR_MARKED_FINISHED) : tr(STR_MARKED_UNFINISHED));
                                delay(1000);
                              }
                              reloadAfterAction();
