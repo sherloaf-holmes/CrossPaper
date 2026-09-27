@@ -41,7 +41,9 @@ Instapaper API requests, as well as images from certain sources, are required to
 
 The fastest way to install CrossPaper is by first installing CrossInk using Inky, Crossink's web companion app: https://inky.crossink.dev/#flash-tools
 
-Then, download a `firmware-*.bin` from the releases page (coming soon) and use the SD Card update to flash it. 
+Then, download a `firmware-*.bin` from the [releases page](https://github.com/sherloaf-holmes/CrossPaper/releases) and use the SD Card update to flash it. 
+
+After the first install, OTA updates on device will work to move to future CrossPaper releases.
 
 See [Installation](./docs/installation.md) for step-by-step flashing and revert instructions.
 
