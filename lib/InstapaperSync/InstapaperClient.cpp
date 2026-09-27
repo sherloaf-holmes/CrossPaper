@@ -134,8 +134,7 @@ InstapaperClient::Error signedPost(std::string_view method, const std::vector<oa
   } state{&http, &sink, method, false};
 
   const int status = http.sendRequest(
-      "POST", reinterpret_cast<const uint8_t*>(body.data()), body.size(),
-      [&state](const uint8_t* data, size_t len) {
+      "POST", reinterpret_cast<const uint8_t*>(body.data()), body.size(), [&state](const uint8_t* data, size_t len) {
         if (!state.started) {
           state.started = true;
           const std::string contentType = state.http->getHeader("content-type");
