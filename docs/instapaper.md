@@ -76,3 +76,103 @@ again.
 - Credentials are stored in `/.crosspoint/instapaper.json`, obfuscated with the
   device's hardware ID (the same scheme as KOReader Sync). This keeps casual
   readers of the SD card out, but it isn't encryption.
+
+## Web API
+
+These endpoints back the `/instapaper` page. Instapaper's API sends no CORS
+headers, so the page cannot call it directly: the device signs and relays calls
+instead. Calls that reach the internet return `409` in hotspot mode. The
+consumer secret and OAuth token are never returned.
+
+### `GET /api/instapaper`
+
+Account state and the articles currently on the device. `finished` comes from
+the book's reading stats, and `percent` is the cached reading progress (`-1`
+when unknown). `missing` means the EPUB was deleted on the device.
+
+```json
+{
+  "apMode": false,
+  "hasConsumerKey": true,
+  "consumerKey": "abc123",
+  "loggedIn": true,
+  "username": "reader@example.com",
+  "maxArticles": 50,
+  "articles": [
+    {
+      "id": 1234567,
+      "title": "An Article",
+      "site": "example.com",
+      "savedAt": 1790000000,
+      "path": "/Instapaper/1234567-an-article.epub",
+      "missing": false,
+      "finished": false,
+      "percent": 42.5
+    }
+  ]
+}
+```
+
+### `POST /api/instapaper/config`
+
+Saves the user's own Instapaper API application key. If `consumerSecret` is
+left out, the saved secret is kept. Changing the key logs out.
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"consumerKey":"abc123","consumerSecret":"s3cret"}' \
+  http://crosspoint.local/api/instapaper/config
+```
+
+### `POST /api/instapaper/login`
+
+Exchanges `username` and `password` for an OAuth token (xAuth). Only the token
+is stored. `ts` is the browser's Unix time, used to sign the request in case the
+device clock is wrong.
+
+```json
+{"username": "reader@example.com", "password": "...", "ts": 1790000000}
+```
+
+### `POST /api/instapaper/logout`
+
+Forgets the OAuth token. The API key is kept.
+
+### `POST /api/instapaper/call?m=<method>&ts=<unix>`
+
+Signs the request and relays it to `https://www.instapaper.com/api/1/<method>`.
+The request body is the form-encoded Instapaper parameters, sent as
+`text/plain`. Allowed methods: `bookmarks/list`, `bookmarks/get_text`,
+`bookmarks/archive`, `bookmarks/update_read_progress` and `folders/list`.
+Instapaper's status code and body are streamed back unchanged, marked with
+`X-Instapaper-Relay: 1`. Errors from the device itself return JSON
+`{"error": "..."}` without that header.
+
+```bash
+curl -X POST -H "Content-Type: text/plain" -d 'bookmark_id=1234567' \
+  "http://crosspoint.local/api/instapaper/call?m=bookmarks/get_text&ts=$(date +%s)"
+```
+
+### `GET /api/instapaper/image?url=<http(s) url>`
+
+Streams one article image through the device, so the page can resize it
+despite the image host's CORS policy. Responses are capped at 1.5 MB.
+
+### `POST /api/instapaper/articles`
+
+Adds an uploaded EPUB to the article index. `path` must be an existing `.epub`
+inside `/Instapaper/`.
+
+```json
+{"id": 1234567, "title": "An Article", "site": "example.com", "savedAt": 1790000000,
+ "path": "/Instapaper/1234567-an-article.epub"}
+```
+
+### `POST /api/instapaper/remove`
+
+Deletes an article's EPUB, its cache, bookmarks and clippings, and removes it
+from the index and Recent Books.
+
+```json
+{"id": 1234567}
+```

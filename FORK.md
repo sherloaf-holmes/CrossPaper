@@ -10,12 +10,31 @@ sync. Prefer new files over edits to upstream files, and small, surgical edits o
 
 | Area | Change | Where |
 | --- | --- | --- |
-| Instapaper sync | New feature: web portal page, device relay API, Articles screen | `lib/InstapaperSync/`, `src/network/InstapaperWebApi.*`, `web/pages/instapaper.*`, related activity changes |
+| Instapaper sync | New feature: web portal page, device relay API, Articles screen | New files: `lib/InstapaperSync/`, `src/InstapaperArticleStore.*`, `src/network/InstapaperWebApi.*`, `src/activities/home/InstapaperArticlesActivity.*`, `web/pages/instapaper.*`, `docs/instapaper.md`, `test/instapaper_oauth/`. Hooks in upstream files are listed below |
+| README | Rewritten as the CrossPaper front page | `README.md` (fork-owned) |
 | OTA updates | Devices check CrossPaper releases, not CrossInk's | `src/network/OtaUpdater.cpp` (the `CROSSINK_OTA_RELEASE_URL` default) |
 | Release workflow | Catalog generation and the signed `docs/catalog` push were removed. The token falls back to `github.token` | `.github/workflows/release.yml` |
 | RC workflow | The token falls back to `github.token` | `.github/workflows/release_candidate.yml` |
 | Removed workflows | `pages.yml` (crossink.dev site), `issue-triage.yml` and `.github/aw/` (upstream triage bot), `release-fonts.yml` (publishes to upstream's font repo and S3) | deleted |
 | Branding | CrossPaper name and assets (in progress) | TBD |
+
+### Upstream files with fork hooks
+
+Instapaper sync is mostly new files, but these upstream files carry small hooks into it. A sync conflict in one of
+them is expected: take upstream's change and re-apply the hook.
+
+| File | Hook |
+| --- | --- |
+| `src/activities/home/HomeActivity.{h,cpp}` | Articles entry on the Home menu (`hasArticles`, `HomeMenuAction::Articles`, the menu capacity, the `articles:` part of the carousel cache key) |
+| `src/activities/ActivityManager.{h,cpp}` | `goToInstapaperArticles()` and `HomeMenuItem::ARTICLES` (added last in the enum) |
+| `src/activities/reader/EpubReaderActivity.cpp` | `canMoveToReadFolder()` keeps articles out of `/Read/`. It also carries the fix for the completion prompt on short final chapters, a general CrossInk bug fix that could go upstream |
+| `src/activities/home/BookActions.cpp` | Same `/Read/` exclusion for Mark as Finished |
+| `src/components/themes/lyra/LyraTheme.cpp` | `UIIcon::Text` icon mapping used by the Articles entry |
+| `src/network/CrossPointWebServer.{h,cpp}` | `/instapaper` page route plus `InstapaperWebApi::registerRoutes()` and `release()` |
+| `scripts/build_web.py`, `web/templates/base.html` | Instapaper page entry and the Articles nav link |
+| `lib/I18n/translations/english.yaml` | `STR_INSTAPAPER_*` strings. Other languages fall back to English automatically |
+| `test/CMakeLists.txt` | `add_subdirectory(instapaper_oauth)` |
+| `docs/index.md`, `docs/webserver-endpoints.md` | One link line each. The API reference lives in `docs/instapaper.md` |
 
 What stays pointed at upstream, on purpose:
 
@@ -97,6 +116,9 @@ git merge upstream/main
 Expected conflict hot spots:
 
 - `CHANGELOG.md`: keep both. CrossPaper entries go above the upstream version they're based on.
+- `README.md` is fork-owned: on conflict, keep ours (GitHub's web editor handles this). Skim upstream's README change
+  in case something belongs in CrossPaper's README too.
+- The Instapaper hooks listed under [Upstream files with fork hooks](#upstream-files-with-fork-hooks).
 - The OTA URL line in `src/network/OtaUpdater.cpp`: keep the CrossPaper URL.
 - The token lines and the removed catalog steps in `release.yml`: keep the fork versions, but take upstream's other
   changes (new build matrix entries, action version bumps).
