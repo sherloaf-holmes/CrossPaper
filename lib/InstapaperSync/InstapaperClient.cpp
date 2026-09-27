@@ -119,7 +119,7 @@ InstapaperClient::Error signedPost(std::string_view method, const std::vector<oa
     LOG_ERR("IPS", "Bad URL: %s", url.c_str());
     return InstapaperClient::NETWORK_ERROR;
   }
-  http.setUserAgent("CrossInk-ESP32-" CROSSINK_VERSION);
+  http.setUserAgent("CrossPaper-ESP32-" CROSSINK_VERSION);
   http.addHeader("Authorization", authorization);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   // SecureHttpClient only sends Content-Length for non-empty bodies; POST

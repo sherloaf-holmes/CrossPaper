@@ -10,6 +10,7 @@ Currently tested & Working on x4 Classic & Simulator, untested on x4/x3/x4 Pro h
 
 ### Changed
 
+- The device and web portal now show CrossPaper branding: the boot and sleep screens, Settings version label, default device name, reader render-mode name, error messages, and web portal title, header and footer, with a new newspaper logo in place of the CrossInk drop. The web portal footer credits CrossInk.
 - Over-the-air updates now come from CrossPaper releases instead of CrossInk, so a CrossPaper device is never updated back to CrossInk. Devices running a build from before this change must be reflashed over USB once.
 
 ### Fixed
