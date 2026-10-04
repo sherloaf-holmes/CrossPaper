@@ -101,6 +101,7 @@ class HomeActivity final : public Activity {
   void onMinimalBrowseOpen();
   void onContinueReading();
   void onLibraryOpen();
+  void onArticlesOpen();
   void onSettingsOpen();
   void onFileTransferOpen();
   void onOpdsBrowserOpen();

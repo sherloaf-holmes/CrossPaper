@@ -29,6 +29,7 @@
 #include "home/CrashActivity.h"
 #include "home/FileBrowserActivity.h"
 #include "home/HomeActivity.h"
+#include "home/InstapaperArticlesActivity.h"
 #include "home/RecentBookProgress.h"
 #include "library/LibraryActivity.h"
 #include "network/CrossPointWebServerActivity.h"
@@ -961,6 +962,10 @@ void ActivityManager::goToLibrary() {
   replaceActivity(std::move(library));
 }
 
+void ActivityManager::goToInstapaperArticles() {
+  replaceActivity(std::make_unique<InstapaperArticlesActivity>(renderer, mappedInput));
+}
+
 void ActivityManager::goToBrowser() {
   const auto& servers = OPDS_STORE.getServers();
   // Skip the server picker when there's only one server configured
@@ -1065,6 +1070,8 @@ void ActivityManager::goHome(HomeMenuItem initialMenuItem, const HalDisplay::Ref
       initialMenuItem = HomeMenuItem::FILE_BROWSER;
     } else if (activityName == "Library") {
       initialMenuItem = HomeMenuItem::LIBRARY;
+    } else if (activityName == "InstapaperArticles") {
+      initialMenuItem = HomeMenuItem::ARTICLES;
     } else if (activityName == "OpdsBookBrowser") {
       initialMenuItem = HomeMenuItem::OPDS_BROWSER;
     } else if (activityName == "CrossPointWebServer") {

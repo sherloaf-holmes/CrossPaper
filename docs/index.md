@@ -26,3 +26,4 @@ Welcome to CrossInk, a personal fork of CrossPoint Reader.
 - [Data Cache](./data-cache.md)
 - [Web Server Guide](./webserver.md)
 - [Troubleshooting](./troubleshooting.md)
+- [Instapaper](./instapaper.md)

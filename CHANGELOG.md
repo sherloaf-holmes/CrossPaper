@@ -118,6 +118,25 @@
 
 - OPDS and download logs hide URL tokens, fragments, and embedded credentials.
 
+## [v1.6.0.1] - 2026-09-26
+
+First working version of CrossPaper, adding Instapaper sync to CrossInk.
+
+Currently tested & Working on x4 Classic & Simulator, untested on x4/x3/x4 Pro hardware
+
+### Added
+
+- Instapaper sync from the web portal: sign in with your own Instapaper API key, then Sync downloads unread articles as EPUBs, archives the ones you marked finished, and sends your reading progress back to Instapaper. The browser does the conversion and the device relays the Instapaper requests. Synced articles have their own Articles screen on the Home menu, showing each article's site, saved date and progress.
+
+### Changed
+
+- The device and web portal now show CrossPaper branding: the boot and sleep screens, Settings version label, default device name, reader render-mode name, error messages, and web portal title, header and footer, with a new newspaper logo in place of the CrossInk drop. The web portal footer credits CrossInk.
+- Over-the-air updates now come from CrossPaper releases instead of CrossInk, so a CrossPaper device is never updated back to CrossInk. Devices running a build from before this change must be reflashed over USB once.
+
+### Fixed
+
+- The "Mark as Finished?" prompt now also appears when you page past the last page of a book that never reached the 99% prompt, such as a short article, a book with a very short final chapter, or a book you jumped to the end of.
+
 ## [v1.6.0] - 2026-09-21
 
 ### Added
