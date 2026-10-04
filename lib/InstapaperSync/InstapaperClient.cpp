@@ -1,5 +1,6 @@
 #include "InstapaperClient.h"
 
+#include <AppVersion.h>
 #include <Arduino.h>
 #include <Logging.h>
 #ifdef SIMULATOR
@@ -119,7 +120,8 @@ InstapaperClient::Error signedPost(std::string_view method, const std::vector<oa
     LOG_ERR("IPS", "Bad URL: %s", url.c_str());
     return InstapaperClient::NETWORK_ERROR;
   }
-  http.setUserAgent("CrossPaper-ESP32-" CROSSINK_VERSION);
+  // Only BuildInfo.cpp receives CROSSINK_VERSION, so read it through AppVersion.
+  http.setUserAgent(std::string("CrossPaper-ESP32-") + AppVersion::version());
   http.addHeader("Authorization", authorization);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   // SecureHttpClient only sends Content-Length for non-empty bodies; POST
