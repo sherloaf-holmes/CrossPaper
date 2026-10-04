@@ -1,3 +1,7 @@
+## [v1.6.1.1] - 2026-10-04
+
+CrossPaper is now up to date with upstream CrossInk 1.6.1. See Below for changes from CrossInk 1.6.1.
+
 ## [v1.6.1] - 2026-10-03
 
 ### Added
